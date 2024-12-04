@@ -1,35 +1,48 @@
-/*4. Написать программу на Java с двумя нитями процессов:
-1-й процесс находит слово максимальной длины в строке;
-2-й процесс сортирует слова по возрастанию.*/
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Scanner;
 
 public class Main {
-    public static  void main(String[] args){
-        List<String> textFromPath = new ArrayList<>();
-    try {
-        textFromPath = FileReader.readFile("text.txt");
-    } catch (IOException e) {
-        System.out.print("Ошибка" + e.getMessage());
-    }
-    String text = String.join(" ", textFromPath);
+    public static void main(String[] args) {
+        System.out.println("Число доступных процессоров: " + Runtime.getRuntime().availableProcessors());
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Число активных потоков в JVM: " + Thread.activeCount());
+        String choice;
+        do {
+            String text;
+            while (true) {
+                System.out.println("Введите текст: ");
+                text = scanner.nextLine().trim();
+                if (!text.isEmpty()) {
+                    System.out.println("Текст не должен быть пустым. Попробуйте ещё раз.");
+                    break;
+                }
+            }
 
-    MaxWordThread maxWord = new MaxWordThread(text);
-    SortWordsThread sortWords = new SortWordsThread(text);
+            System.out.println("\nИсходный текст: " + text);
 
-    Thread threadMaxWord = new Thread(maxWord);
-    Thread threadSortWords = new Thread(sortWords);
-    threadMaxWord.start();
-    try {
-        threadMaxWord.join();
-        Thread.sleep(1500);
-        System.out.println("Первый процесс завершил свою работу, запускаем следующий");
-    } catch (InterruptedException e) {
-        System.out.print("Ошибка" + e.getMessage());
-    }
-    threadSortWords.start();
+            MaxWordThread maxWord = new MaxWordThread(text);
+            SortWordsThread sortWords = new SortWordsThread(text);
 
+            Thread threadMaxWord = new Thread(maxWord);
+            Thread threadSortWords = new Thread(sortWords);
+
+            threadMaxWord.start();
+            try {
+                threadMaxWord.join();
+                Thread.sleep(1500);
+                System.out.println("Первый процесс завершил свою работу, запускаем следующий.");
+            } catch (InterruptedException e) {
+                System.out.print("Ошибка: " + e.getMessage());
+            }
+
+            threadSortWords.start();
+            try {
+                threadSortWords.join(); // Дождаться завершения 2-го потока
+                System.out.println("\nВторой процесс завершил свою работу.");
+            } catch (InterruptedException e) {
+                System.out.print("Ошибка: " + e.getMessage());
+            }
+            System.out.println("\nХотите протестировать ещё раз? (да/нет): ");
+            choice = scanner.nextLine().trim().toLowerCase();
+        } while (choice.equals("да"));
     }
 }
